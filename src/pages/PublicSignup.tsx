@@ -130,55 +130,28 @@ export default function PublicSignup() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user");
 
-      // 2. Create organization
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: organizationName,
-          subscription_plan: selectedPlan,
-          // Default customization based on business type
-          branding: getDefaultBranding(businessType),
-          terminology: getDefaultTerminology(businessType),
-          features: getDefaultFeatures(selectedPlan),
-        })
-        .select()
-        .single();
+      // 2. Call RPC function to create organization (bypasses RLS)
+      const { data: orgId, error: orgError } = await supabase.rpc('signup_organization' as any, {
+        p_organization_name: organizationName,
+        p_subscription_plan: selectedPlan,
+        p_branding: getDefaultBranding(businessType),
+        p_terminology: getDefaultTerminology(businessType),
+        p_features: getDefaultFeatures(selectedPlan),
+        p_dashboard_layout: {},
+        p_report_templates: {},
+        p_full_name: fullName,
+        p_phone: phone,
+        p_user_id: authData.user.id,
+      });
 
-      if (orgError) throw orgError;
+      if (orgError) {
+        console.error("Organization creation error:", orgError);
+        throw new Error(orgError.message || "Failed to create organization");
+      }
 
-      // 3. Update user profile with organization_id
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          organization_id: orgData.id,
-          full_name: fullName,
-          phone: phone,
-        })
-        .eq("user_id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      // 4. Set user role as admin
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: "admin",
-        });
-
-      if (roleError) throw roleError;
-
-      // 5. Create subscription history
-      const { error: subError } = await supabase
-        .from("subscription_history")
-        .insert({
-          organization_id: orgData.id,
-          plan: selectedPlan,
-          amount: SUBSCRIPTION_PLANS.find(p => p.id === selectedPlan)?.price || 0,
-          status: selectedPlan === "free" ? "active" : "pending", // If paid plan, wait for payment
-        });
-
-      if (subError) throw subError;
+      if (!orgId) {
+        throw new Error("Failed to get organization ID");
+      }
 
       toast.success("Akun berhasil dibuat!");
       
@@ -186,14 +159,14 @@ export default function PublicSignup() {
       if (selectedPlan === "free") {
         toast.success("Selamat datang! Akun Free Anda sudah aktif");
         setTimeout(() => {
-          navigate("/");
+          navigate("/dashboard");
         }, 1500);
       } else {
         // If paid plan, redirect to payment (implement later)
         toast.success("Silakan lanjutkan ke pembayaran");
-        // navigate(`/payment?org_id=${orgData.id}&plan=${selectedPlan}`);
+        // navigate(`/payment?org_id=${orgId}&plan=${selectedPlan}`);
         setTimeout(() => {
-          navigate("/");
+          navigate("/dashboard");
         }, 1500);
       }
 
