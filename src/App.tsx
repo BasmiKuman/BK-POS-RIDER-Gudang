@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { OrganizationProvider } from "./contexts/OrganizationContext";
 import Auth from "./pages/Auth";
 import EmailVerified from "./pages/EmailVerified";
 import ResetPassword from "./pages/ResetPassword";
@@ -16,6 +17,7 @@ import Settings from "./pages/Settings";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import CreateOrganization from "./pages/CreateOrganization";
 import OrganizationDetail from "./pages/OrganizationDetail";
+import OrganizationSettings from "./pages/OrganizationSettings";
 import ManageSubscriptionPlans from "./pages/ManageSubscriptionPlans";
 import NotFound from "./pages/NotFound";
 
@@ -31,11 +33,12 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+    <OrganizationProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
           <Route 
             path="/" 
             element={
@@ -128,6 +131,15 @@ const App = () => {
           />
           
           <Route
+            path="/super-admin/organization/:id/settings"
+            element={
+              <ProtectedRoute requireSuperAdmin={true}>
+                <OrganizationSettings />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
             path="/super-admin/subscription-plans"
             element={
               <ProtectedRoute requireSuperAdmin={true}>
@@ -142,6 +154,7 @@ const App = () => {
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </OrganizationProvider>
   </QueryClientProvider>
   );
 };

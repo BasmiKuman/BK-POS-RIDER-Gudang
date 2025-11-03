@@ -290,9 +290,12 @@ export default function OrganizationDetail() {
               >
                 {organization.is_active ? "Deactivate" : "Activate"}
               </Button>
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/super-admin/organization/${id}/settings`)}
+              >
                 <Settings className="w-4 h-4 mr-2" />
-                Edit
+                Customize
               </Button>
             </div>
           </div>

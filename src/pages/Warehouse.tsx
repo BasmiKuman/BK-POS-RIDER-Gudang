@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTerminology } from "@/contexts/OrganizationContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ type ReturnHistoryItem = {
 
 export default function Warehouse() {
   const isMobile = useIsMobile();
+  const terminology = useTerminology(); // Get custom terminology
   const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -307,16 +309,18 @@ export default function Warehouse() {
               <CardHeader>
                 <CardTitle className="flex items-center text-lg sm:text-xl">
                   <Send className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                  Distribusi Produk
+                  Distribusi {terminology.product_plural}
                 </CardTitle>
-                <CardDescription className="text-sm">Distribusikan produk dari gudang ke rider</CardDescription>
+                <CardDescription className="text-sm">
+                  Distribusikan {terminology.product_plural.toLowerCase()} dari {terminology.warehouse.toLowerCase()} ke {terminology.rider.toLowerCase()}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm sm:text-base">Pilih Rider</Label>
+                  <Label className="text-sm sm:text-base">Pilih {terminology.rider}</Label>
                   <Select value={selectedRider} onValueChange={setSelectedRider}>
                     <SelectTrigger className="h-9 sm:h-10">
-                      <SelectValue placeholder="Pilih rider..." />
+                      <SelectValue placeholder={`Pilih ${terminology.rider.toLowerCase()}...`} />
                     </SelectTrigger>
                     <SelectContent>
                       {riders.map((rider) => (
