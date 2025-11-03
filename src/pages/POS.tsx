@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { useTerminology } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ interface ReceiptData {
 }
 
 export default function POS() {
+  const terminology = useTerminology();
   const [riderProducts, setRiderProducts] = useState<RiderProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -276,7 +278,7 @@ export default function POS() {
         {/* Header with Weather Widget - Inline */}
         <div className="flex items-center justify-between gap-2">
           <div className="space-y-0.5 flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient">Point of Sale</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient">{terminology.pos}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Transaksi penjualan</p>
           </div>
           <WeatherWidget />
@@ -285,7 +287,7 @@ export default function POS() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Products */}
           <div className="lg:col-span-2 space-y-2 sm:space-y-3">
-            <h2 className="text-base sm:text-lg font-semibold">Produk Tersedia</h2>
+            <h2 className="text-base sm:text-lg font-semibold">{terminology.product_plural} Tersedia</h2>
             
             {/* Category Filter - Horizontal Scroll */}
             {categories.length > 0 && (
@@ -320,7 +322,7 @@ export default function POS() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <Package className="w-16 h-16 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Tidak ada stok produk</p>
+                  <p className="text-muted-foreground">Tidak ada stok {terminology.product.toLowerCase()}</p>
                 </CardContent>
               </Card>
             ) : (

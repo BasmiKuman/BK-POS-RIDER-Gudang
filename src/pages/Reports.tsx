@@ -1,6 +1,7 @@
 import { BottomNav } from "@/components/BottomNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTerminology } from "@/contexts/OrganizationContext";
 import { StatsCard } from "@/components/StatsCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
 export default function Reports() {
+  const terminology = useTerminology();
   const isMobile = useIsMobile();
   const [dateRange, setDateRange] = useState({
     start: startOfMonth(new Date()),

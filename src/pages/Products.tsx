@@ -4,6 +4,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { LowStockAlert } from "@/components/LowStockAlert";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BulkReturnTab } from "@/components/BulkReturnTab";
+import { useTerminology } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,7 @@ const productSchema = z.object({
 });
 
 export default function Products() {
+  const terminology = useTerminology();
   const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -504,7 +506,7 @@ export default function Products() {
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Tambah Produk Baru</DialogTitle>
+                  <DialogTitle>Tambah {terminology.product} Baru</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -513,9 +515,9 @@ export default function Products() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nama Produk *</FormLabel>
+                          <FormLabel>Nama {terminology.product} *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Masukkan nama produk" {...field} />
+                            <Input placeholder={`Masukkan nama ${terminology.product.toLowerCase()}`} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -676,7 +678,7 @@ export default function Products() {
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Produk</DialogTitle>
+              <DialogTitle>Edit {terminology.product}</DialogTitle>
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
@@ -685,9 +687,9 @@ export default function Products() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Produk *</FormLabel>
+                      <FormLabel>Nama {terminology.product} *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Masukkan nama produk" {...field} />
+                        <Input placeholder={`Masukkan nama ${terminology.product.toLowerCase()}`} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

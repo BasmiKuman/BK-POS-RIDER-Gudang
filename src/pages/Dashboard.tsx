@@ -6,6 +6,7 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import RiderTrackingMap from "@/components/RiderTrackingMap";
 import { ReturnsAccordion } from "@/components/ReturnsAccordion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTerminology } from "@/contexts/OrganizationContext";
 import { Package, TrendingUp, Users, ShoppingCart, Undo2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface ReturnRequest {
 }
 
 export default function Dashboard() {
+  const terminology = useTerminology();
   const [isAdmin, setIsAdmin] = useState(false);
   const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [processingReturnId, setProcessingReturnId] = useState<string | null>(null);
@@ -421,14 +423,14 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatsCard
-            title="Total Produk"
+            title={`Total ${terminology.product_plural}`}
             value={stats.totalProducts}
             icon={Package}
             className="animate-fade-in"
             variant="primary"
           />
           <StatsCard
-            title="Transaksi"
+            title={terminology.order_plural}
             value={stats.totalTransactions}
             icon={ShoppingCart}
             className="animate-fade-in"
@@ -442,7 +444,7 @@ export default function Dashboard() {
             variant="accent"
           />
           <StatsCard
-            title="Rider Aktif"
+            title={`${terminology.rider_plural} Aktif`}
             value={stats.activeRiders}
             icon={Users}
             className="animate-fade-in"
@@ -458,9 +460,9 @@ export default function Dashboard() {
                 <div className="p-1.5 rounded-lg bg-primary/10">
                   <Undo2 className="w-4 h-4 text-primary" />
                 </div>
-                Permintaan Return
+                Permintaan {terminology.return}
               </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Kelola return dari rider</CardDescription>
+              <CardDescription className="text-xs sm:text-sm">Kelola {terminology.return.toLowerCase()} dari {terminology.rider.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4">
               <ReturnsAccordion
