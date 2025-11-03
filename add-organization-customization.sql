@@ -117,5 +117,9 @@ LIMIT 5;
 --   terminology = jsonb_set(terminology, '{rider}', '"Kurir"')
 -- WHERE slug = 'warung-mbok-sri';
 
-RAISE NOTICE '✅ Organization customization columns added successfully!';
-RAISE NOTICE '📝 Now you can customize each organization branding, terminology, features, and more.';
+-- Success message
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Organization customization columns added successfully!';
+  RAISE NOTICE '📝 Now you can customize each organization branding, terminology, features, and more.';
+END $$;
