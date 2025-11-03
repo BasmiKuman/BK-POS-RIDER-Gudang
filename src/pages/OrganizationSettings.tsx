@@ -156,6 +156,26 @@ export default function OrganizationSettings() {
     });
   };
 
+  const updateDashboardLayout = (key: string, value: any) => {
+    setSettings({
+      ...settings,
+      dashboard_layout: { ...settings.dashboard_layout, [key]: value },
+    });
+  };
+
+  const updateReportTemplate = (reportType: string, key: string, value: any) => {
+    setSettings({
+      ...settings,
+      report_templates: {
+        ...settings.report_templates,
+        [reportType]: {
+          ...settings.report_templates[reportType as keyof typeof settings.report_templates],
+          [key]: value,
+        },
+      },
+    });
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -358,10 +378,129 @@ export default function OrganizationSettings() {
                 Configure dashboard widgets and layout preferences
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Dashboard layout customization coming soon...
-              </p>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label>Visible Widgets</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: "sales_summary", label: "Sales Summary" },
+                    { key: "stock_alerts", label: "Stock Alerts" },
+                    { key: "rider_status", label: "Rider Status" },
+                    { key: "recent_orders", label: "Recent Orders" },
+                    { key: "top_products", label: "Top Products" },
+                    { key: "revenue_chart", label: "Revenue Chart" },
+                  ].map((widget) => (
+                    <div key={widget.key} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`widget_${widget.key}`}
+                        checked={settings.dashboard_layout.widgets?.includes(widget.key) || false}
+                        onChange={(e) => {
+                          const currentWidgets = settings.dashboard_layout.widgets || [];
+                          const newWidgets = e.target.checked
+                            ? [...currentWidgets, widget.key]
+                            : currentWidgets.filter((w) => w !== widget.key);
+                          updateDashboardLayout("widgets", newWidgets);
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor={`widget_${widget.key}`} className="font-normal cursor-pointer">
+                        {widget.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label>Chart Types</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { key: "line", label: "Line Chart" },
+                    { key: "bar", label: "Bar Chart" },
+                    { key: "pie", label: "Pie Chart" },
+                    { key: "area", label: "Area Chart" },
+                  ].map((chart) => (
+                    <div key={chart.key} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`chart_${chart.key}`}
+                        checked={settings.dashboard_layout.charts?.includes(chart.key) || false}
+                        onChange={(e) => {
+                          const currentCharts = settings.dashboard_layout.charts || [];
+                          const newCharts = e.target.checked
+                            ? [...currentCharts, chart.key]
+                            : currentCharts.filter((c) => c !== chart.key);
+                          updateDashboardLayout("charts", newCharts);
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor={`chart_${chart.key}`} className="font-normal cursor-pointer">
+                        {chart.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="show_weather"
+                    checked={settings.dashboard_layout.show_weather || false}
+                    onChange={(e) => updateDashboardLayout("show_weather", e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="show_weather" className="font-normal cursor-pointer">
+                    Show Weather Widget
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="show_gps_map"
+                    checked={settings.dashboard_layout.show_gps_map || false}
+                    onChange={(e) => updateDashboardLayout("show_gps_map", e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="show_gps_map" className="font-normal cursor-pointer">
+                    Show GPS Map
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="default_view">Default View</Label>
+                <select
+                  id="default_view"
+                  value={settings.dashboard_layout.default_view || "overview"}
+                  onChange={(e) => updateDashboardLayout("default_view", e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="overview">Overview</option>
+                  <option value="sales">Sales Focus</option>
+                  <option value="inventory">Inventory Focus</option>
+                  <option value="riders">Riders Focus</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="refresh_interval">Auto Refresh Interval (seconds)</Label>
+                <Input
+                  id="refresh_interval"
+                  type="number"
+                  min="0"
+                  max="300"
+                  value={settings.dashboard_layout.refresh_interval || 30}
+                  onChange={(e) => updateDashboardLayout("refresh_interval", parseInt(e.target.value) || 30)}
+                  placeholder="30"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set to 0 to disable auto-refresh
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -372,13 +511,181 @@ export default function OrganizationSettings() {
             <CardHeader>
               <CardTitle>Report Templates</CardTitle>
               <CardDescription>
-                Configure available reports and their fields
+                Configure available reports and their default settings
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Report template customization coming soon...
-              </p>
+            <CardContent className="space-y-6">
+              {/* Sales Report */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Sales Report</h4>
+                    <p className="text-sm text-muted-foreground">Daily, weekly, and monthly sales analysis</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.report_templates.sales_report?.enabled ?? true}
+                    onChange={(e) => updateReportTemplate("sales_report", "enabled", e.target.checked)}
+                    className="h-5 w-5"
+                  />
+                </div>
+                {(settings.report_templates.sales_report?.enabled ?? true) && (
+                  <div className="pl-4 space-y-2">
+                    <Label className="text-sm">Include Sections:</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["summary", "by_product", "by_rider", "by_payment_method"].map((section) => (
+                        <div key={section} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`sales_${section}`}
+                            checked={settings.report_templates.sales_report?.sections?.includes(section) ?? true}
+                            onChange={(e) => {
+                              const current = settings.report_templates.sales_report?.sections || ["summary", "by_product", "by_rider", "by_payment_method"];
+                              const newSections = e.target.checked
+                                ? [...current, section]
+                                : current.filter((s) => s !== section);
+                              updateReportTemplate("sales_report", "sections", newSections);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor={`sales_${section}`} className="text-sm font-normal cursor-pointer">
+                            {section.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Stock Report */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Stock Report</h4>
+                    <p className="text-sm text-muted-foreground">Inventory levels and movement tracking</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.report_templates.stock_report?.enabled ?? true}
+                    onChange={(e) => updateReportTemplate("stock_report", "enabled", e.target.checked)}
+                    className="h-5 w-5"
+                  />
+                </div>
+                {(settings.report_templates.stock_report?.enabled ?? true) && (
+                  <div className="pl-4 space-y-2">
+                    <Label className="text-sm">Include Sections:</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["current_stock", "low_stock_alerts", "stock_movement", "expiry_tracking"].map((section) => (
+                        <div key={section} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`stock_${section}`}
+                            checked={settings.report_templates.stock_report?.sections?.includes(section) ?? true}
+                            onChange={(e) => {
+                              const current = settings.report_templates.stock_report?.sections || ["current_stock", "low_stock_alerts", "stock_movement"];
+                              const newSections = e.target.checked
+                                ? [...current, section]
+                                : current.filter((s) => s !== section);
+                              updateReportTemplate("stock_report", "sections", newSections);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor={`stock_${section}`} className="text-sm font-normal cursor-pointer">
+                            {section.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Rider Report */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Rider Report</h4>
+                    <p className="text-sm text-muted-foreground">Delivery performance and GPS tracking</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.report_templates.rider_report?.enabled ?? true}
+                    onChange={(e) => updateReportTemplate("rider_report", "enabled", e.target.checked)}
+                    className="h-5 w-5"
+                  />
+                </div>
+                {(settings.report_templates.rider_report?.enabled ?? true) && (
+                  <div className="pl-4 space-y-2">
+                    <Label className="text-sm">Include Sections:</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["delivery_summary", "gps_routes", "performance_metrics", "attendance"].map((section) => (
+                        <div key={section} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`rider_${section}`}
+                            checked={settings.report_templates.rider_report?.sections?.includes(section) ?? true}
+                            onChange={(e) => {
+                              const current = settings.report_templates.rider_report?.sections || ["delivery_summary", "gps_routes", "performance_metrics"];
+                              const newSections = e.target.checked
+                                ? [...current, section]
+                                : current.filter((s) => s !== section);
+                              updateReportTemplate("rider_report", "sections", newSections);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor={`rider_${section}`} className="text-sm font-normal cursor-pointer">
+                            {section.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Financial Report */}
+              <div className="space-y-3 p-4 border rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">Financial Report</h4>
+                    <p className="text-sm text-muted-foreground">Revenue, expenses, and profit analysis</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.report_templates.financial_report?.enabled ?? true}
+                    onChange={(e) => updateReportTemplate("financial_report", "enabled", e.target.checked)}
+                    className="h-5 w-5"
+                  />
+                </div>
+                {(settings.report_templates.financial_report?.enabled ?? true) && (
+                  <div className="pl-4 space-y-2">
+                    <Label className="text-sm">Include Sections:</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["revenue", "expenses", "profit_loss", "tax_summary"].map((section) => (
+                        <div key={section} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`financial_${section}`}
+                            checked={settings.report_templates.financial_report?.sections?.includes(section) ?? true}
+                            onChange={(e) => {
+                              const current = settings.report_templates.financial_report?.sections || ["revenue", "expenses", "profit_loss"];
+                              const newSections = e.target.checked
+                                ? [...current, section]
+                                : current.filter((s) => s !== section);
+                              updateReportTemplate("financial_report", "sections", newSections);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor={`financial_${section}`} className="text-sm font-normal cursor-pointer">
+                            {section.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
