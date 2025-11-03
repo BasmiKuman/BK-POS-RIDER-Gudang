@@ -24,10 +24,19 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   v_organization_id UUID;
+  v_slug TEXT;
 BEGIN
+  -- Generate slug from organization name
+  v_slug := lower(regexp_replace(p_organization_name, '[^a-zA-Z0-9]+', '-', 'g'));
+  v_slug := regexp_replace(v_slug, '^-+|-+$', '', 'g'); -- Remove leading/trailing dashes
+  
+  -- Add random suffix to ensure uniqueness
+  v_slug := v_slug || '-' || substring(gen_random_uuid()::text from 1 for 8);
+  
   -- 1. Create organization
   INSERT INTO public.organizations (
     name,
+    slug,
     subscription_plan,
     branding,
     terminology,
@@ -36,6 +45,7 @@ BEGIN
     report_templates
   ) VALUES (
     p_organization_name,
+    v_slug,
     p_subscription_plan,
     p_branding,
     p_terminology,
