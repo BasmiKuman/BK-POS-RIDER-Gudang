@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 import Auth from "./pages/Auth";
+import PublicSignup from "./pages/PublicSignup";
 import EmailVerified from "./pages/EmailVerified";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
@@ -50,6 +51,7 @@ const App = () => {
             }
           />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/signup" element={<PublicSignup />} />
           <Route path="/email-verified" element={<EmailVerified />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           
