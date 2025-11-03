@@ -84,34 +84,24 @@ export default function OrganizationDetail() {
       // Load organization details
       const { data: org, error: orgError } = await supabase
         .from("organizations" as any)
-        .select(`
-          *,
-          subscription_plans!inner(name)
-        `)
+        .select("*")
         .eq("id", id)
         .single();
 
       if (orgError) throw orgError;
 
-      const orgData = org as any;
-      setOrganization({
-        ...orgData,
-        subscription_plan: orgData.subscription_plans?.name || 'Unknown'
-      });
+      setOrganization(org as any);
 
-      // Load users in this organization
-      const { data: usersData } = await supabase
-        .from("profiles" as any)
-        .select(`
-          id,
-          full_name,
-          created_at,
-          user_roles!inner(role),
-          auth.users!inner(email)
-        `)
-        .eq("organization_id", id);
+      // Load users in this organization using RPC
+      const { data: usersData, error: usersError } = await (supabase as any)
+        .rpc("get_organization_users", { org_id: id });
 
-      setUsers((usersData as any) || []);
+      if (usersError) {
+        console.error("Error loading users:", usersError);
+        setUsers([]);
+      } else {
+        setUsers((usersData as any) || []);
+      }
 
       // Load products in this organization
       const { data: productsData } = await supabase
@@ -137,12 +127,30 @@ export default function OrganizationDetail() {
           end_date,
           amount,
           payment_status,
-          subscription_plans!inner(name)
+          plan_id
         `)
         .eq("organization_id", id)
         .order("start_date", { ascending: false });
 
-      setSubscriptionHistory((historyData as any) || []);
+      // Get plan names separately
+      if (historyData && historyData.length > 0) {
+        const planIds = [...new Set(historyData.map((h: any) => h.plan_id))];
+        const { data: plansData } = await supabase
+          .from("subscription_plans" as any)
+          .select("id, name, display_name")
+          .in("id", planIds);
+
+        const plansMap = new Map((plansData || []).map((p: any) => [p.id, p]));
+        
+        const enrichedHistory = historyData.map((h: any) => ({
+          ...h,
+          subscription_plans: plansMap.get(h.plan_id) || { name: 'Unknown' }
+        }));
+
+        setSubscriptionHistory(enrichedHistory);
+      } else {
+        setSubscriptionHistory([]);
+      }
 
     } catch (error: any) {
       console.error("Error loading organization:", error);
