@@ -112,5 +112,9 @@ WHERE n.nspname = 'public'
 --   'user-uuid-here'
 -- );
 
-RAISE NOTICE '✅ Function signup_organization created successfully';
-RAISE NOTICE '✅ Now you can signup new organizations from PublicSignup page';
+-- 5. Success message
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Function signup_organization created successfully';
+  RAISE NOTICE '✅ Now you can signup new organizations from PublicSignup page';
+END $$;
