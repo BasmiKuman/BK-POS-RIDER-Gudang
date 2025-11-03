@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
+import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import PublicSignup from "./pages/PublicSignup";
 import EmailVerified from "./pages/EmailVerified";
@@ -40,8 +41,19 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
+          {/* Public Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Auth Routes */}
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Auth />} />
+          <Route path="/signup" element={<PublicSignup />} />
+          <Route path="/email-verified" element={<EmailVerified />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
+          {/* Protected App Routes */}
           <Route 
-            path="/" 
+            path="/app" 
             element={
               <ProtectedRoute>
                 {({ isAdmin }) => (
@@ -50,10 +62,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/signup" element={<PublicSignup />} />
-          <Route path="/email-verified" element={<EmailVerified />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
           
           <Route
             path="/dashboard"
