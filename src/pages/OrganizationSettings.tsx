@@ -48,13 +48,33 @@ export default function OrganizationSettings() {
   const loadSettings = async () => {
     try {
       setLoading(true);
+      
+      // Try to load with new columns first
       const { data, error } = await supabase
         .from("organizations" as any)
         .select("name, branding, terminology, features, dashboard_layout, report_templates")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If columns don't exist yet, just load name
+        console.log("New columns not available yet, loading basic info only");
+        const { data: basicData, error: basicError } = await supabase
+          .from("organizations" as any)
+          .select("name")
+          .eq("id", id)
+          .single();
+        
+        if (basicError) throw basicError;
+        
+        setOrgName((basicData as any).name);
+        toast({
+          title: "Migration Required",
+          description: "Please execute add-organization-customization.sql in Supabase SQL Editor first",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const orgData = data as any;
       setOrgName(orgData.name);
@@ -69,7 +89,7 @@ export default function OrganizationSettings() {
       console.error("Error loading settings:", error);
       toast({
         title: "Error",
-        description: "Failed to load organization settings",
+        description: "Failed to load organization settings. Make sure migration is executed.",
         variant: "destructive",
       });
     } finally {
