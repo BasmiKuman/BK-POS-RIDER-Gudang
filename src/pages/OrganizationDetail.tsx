@@ -6,6 +6,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -17,7 +34,8 @@ import {
   DollarSign,
   Settings,
   UserPlus,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 
 interface Organization {
@@ -70,12 +88,34 @@ export default function OrganizationDetail() {
   const [products, setProducts] = useState<Product[]>([]);
   const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionHistory[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Change Plan Dialog
+  const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [newPlan, setNewPlan] = useState("");
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
       loadOrganizationData();
+      loadAvailablePlans();
     }
   }, [id]);
+
+  const loadAvailablePlans = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("subscription_plans" as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("price_monthly", { ascending: true });
+
+      if (error) throw error;
+      setAvailablePlans(data || []);
+    } catch (error) {
+      console.error("Error loading plans:", error);
+    }
+  };
 
   const loadOrganizationData = async () => {
     try {
@@ -177,6 +217,56 @@ export default function OrganizationDetail() {
       toast.success(`Organization ${newStatus ? 'activated' : 'deactivated'} successfully`);
     } catch (error: any) {
       toast.error(error.message || "Failed to update organization status");
+    }
+  };
+
+  const handleChangePlan = async () => {
+    if (!organization || !newPlan) return;
+
+    try {
+      setChangingPlan(true);
+
+      // Get plan details
+      const selectedPlan = availablePlans.find(p => p.name === newPlan);
+      if (!selectedPlan) {
+        toast.error("Plan not found");
+        return;
+      }
+
+      // 1. Update organization subscription_plan
+      const { error: updateError } = await supabase
+        .from("organizations" as any)
+        .update({ subscription_plan: newPlan })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+
+      // 2. Create new subscription history entry
+      const { error: historyError } = await supabase
+        .from("subscription_history" as any)
+        .insert({
+          organization_id: id,
+          plan_id: selectedPlan.id,
+          amount: selectedPlan.price_monthly,
+          payment_status: newPlan === 'free' ? 'paid' : 'pending',
+          payment_date: newPlan === 'free' ? new Date().toISOString() : null,
+          start_date: new Date().toISOString(),
+          end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        });
+
+      if (historyError) throw historyError;
+
+      toast.success(`Plan changed to ${newPlan.toUpperCase()} successfully!`);
+      setChangePlanOpen(false);
+      setNewPlan("");
+      
+      // Reload data
+      await loadOrganizationData();
+    } catch (error: any) {
+      console.error("Error changing plan:", error);
+      toast.error(error.message || "Failed to change plan");
+    } finally {
+      setChangingPlan(false);
     }
   };
 
@@ -284,6 +374,91 @@ export default function OrganizationDetail() {
             </div>
 
             <div className="flex gap-2">
+              <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Change Plan
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Subscription Plan</DialogTitle>
+                    <DialogDescription>
+                      Upgrade or downgrade this organization's subscription plan.
+                      Current plan: <strong>{organization.subscription_plan.toUpperCase()}</strong>
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="plan">New Plan</Label>
+                      <Select value={newPlan} onValueChange={setNewPlan}>
+                        <SelectTrigger id="plan">
+                          <SelectValue placeholder="Select a plan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availablePlans.map((plan) => (
+                            <SelectItem 
+                              key={plan.id} 
+                              value={plan.name}
+                              disabled={plan.name === organization.subscription_plan}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <span>{plan.display_name}</span>
+                                <span className="text-muted-foreground ml-4">
+                                  {new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0,
+                                  }).format(plan.price_monthly)}/mo
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {newPlan && (
+                      <div className="rounded-lg bg-muted p-4 text-sm">
+                        <p className="font-semibold mb-2">Plan Details:</p>
+                        {availablePlans.find(p => p.name === newPlan) && (
+                          <ul className="space-y-1 text-muted-foreground">
+                            <li>• Max Users: {availablePlans.find(p => p.name === newPlan)?.max_users || '∞'}</li>
+                            <li>• Max Products: {availablePlans.find(p => p.name === newPlan)?.max_products || '∞'}</li>
+                            <li>• Max Riders: {availablePlans.find(p => p.name === newPlan)?.max_riders || '∞'}</li>
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setChangePlanOpen(false)}
+                      disabled={changingPlan}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleChangePlan}
+                      disabled={!newPlan || changingPlan}
+                    >
+                      {changingPlan ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Changing...
+                        </>
+                      ) : (
+                        'Change Plan'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <Button
                 variant={organization.is_active ? "destructive" : "default"}
                 onClick={handleToggleStatus}

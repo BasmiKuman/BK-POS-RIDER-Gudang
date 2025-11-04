@@ -12,14 +12,15 @@ interface Organization {
   id: string;
   name: string;
   slug: string;
-  subscription_status: string;
   subscription_plan: string;
-  subscription_end_date: string;
-  max_users: number;
-  max_products: number;
-  max_riders: number;
-  is_active: boolean;
   created_at: string;
+  // From subscription_history join
+  payment_status?: string;
+  end_date?: string;
+  plan_name?: string;
+  max_users?: number;
+  max_products?: number;
+  max_riders?: number;
 }
 
 interface Stats {
@@ -77,19 +78,43 @@ export default function SuperAdminDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Load organizations
+      // Load organizations with latest subscription info
       const { data: orgs, error: orgsError } = await supabase
         .from("organizations" as any)
-        .select("*")
+        .select(`
+          *,
+          subscription_history (
+            payment_status,
+            end_date,
+            start_date,
+            plan_id
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (orgsError) throw orgsError;
 
-      setOrganizations((orgs as any) || []);
+      // Transform data to include latest subscription
+      const orgsWithSubscription = (orgs as any)?.map((org: any) => {
+        const latestSubscription = org.subscription_history?.[0]; // Get latest
+        return {
+          ...org,
+          payment_status: latestSubscription?.payment_status || 'pending',
+          end_date: latestSubscription?.end_date,
+          start_date: latestSubscription?.start_date,
+        };
+      }) || [];
 
-      // Calculate stats
-      const activeCount = orgs?.filter((org: any) => org.subscription_status === 'active').length || 0;
-      const trialCount = orgs?.filter((org: any) => org.subscription_status === 'trial').length || 0;
+      setOrganizations(orgsWithSubscription);
+
+      // Calculate stats - use payment_status instead of subscription_status
+      const activeCount = orgsWithSubscription?.filter((org: any) => 
+        org.payment_status === 'paid' || org.subscription_plan === 'free'
+      ).length || 0;
+      
+      const trialCount = orgsWithSubscription?.filter((org: any) => 
+        org.payment_status === 'pending' && org.subscription_plan !== 'free'
+      ).length || 0;
 
       // Get revenue from subscription_history
       const { data: payments } = await supabase
@@ -100,7 +125,7 @@ export default function SuperAdminDashboard() {
       const totalRevenue = payments?.reduce((sum: number, payment: any) => sum + Number(payment.amount), 0) || 0;
 
       setStats({
-        totalOrganizations: orgs?.length || 0,
+        totalOrganizations: orgsWithSubscription?.length || 0,
         activeSubscriptions: activeCount,
         totalRevenue,
         trialOrganizations: trialCount,
@@ -301,16 +326,16 @@ export default function SuperAdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell>{getPlanBadge(org.subscription_plan)}</TableCell>
-                      <TableCell>{getStatusBadge(org.subscription_status)}</TableCell>
+                      <TableCell>{getStatusBadge(org.payment_status || 'pending')}</TableCell>
                       <TableCell className="text-xs">
-                        <div>Users: {org.max_users}</div>
-                        <div>Products: {org.max_products}</div>
-                        <div>Riders: {org.max_riders}</div>
+                        <div>Users: {org.max_users || '∞'}</div>
+                        <div>Products: {org.max_products || '∞'}</div>
+                        <div>Riders: {org.max_riders || '∞'}</div>
                       </TableCell>
                       <TableCell className="text-sm">
-                        {org.subscription_end_date
-                          ? formatDate(org.subscription_end_date)
-                          : "—"}
+                        {org.end_date
+                          ? formatDate(org.end_date)
+                          : <span className="text-muted-foreground">No expiry</span>}
                       </TableCell>
                       <TableCell className="text-sm">
                         {formatDate(org.created_at)}
