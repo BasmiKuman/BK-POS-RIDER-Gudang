@@ -139,15 +139,16 @@ export default function Settings() {
             // Set initial state
             setUsers(ridersWithEmail);
 
-            // Try to get emails from auth
+            // Try to get emails using RPC function (works for organization admins)
             try {
-              const { data: authData } = await supabase.auth.admin.listUsers();
-              if (authData?.users && Array.isArray(authData.users)) {
+              const { data: usersWithEmails, error: rpcError } = await supabase.rpc('get_organization_users');
+              
+              if (!rpcError && usersWithEmails && Array.isArray(usersWithEmails)) {
                 const updatedRiders: Profile[] = ridersWithEmail.map(rider => {
-                  const authUser = authData.users.find((u: any) => u.id === rider.user_id);
+                  const userWithEmail = usersWithEmails.find((u: any) => u.user_id === rider.user_id);
                   return {
                     ...rider,
-                    email: authUser?.email || ""
+                    email: userWithEmail?.email || ""
                   };
                 });
                 setUsers(updatedRiders);
