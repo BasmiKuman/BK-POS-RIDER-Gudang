@@ -37,14 +37,14 @@ BEGIN
   v_slug := v_slug || '-' || substring(gen_random_uuid()::text from 1 for 8);
   
   -- Get plan_id and amount from subscription_plans table
-  SELECT id, price INTO v_plan_id, v_amount
+  SELECT id, price_monthly INTO v_plan_id, v_amount
   FROM public.subscription_plans
   WHERE name = p_subscription_plan
   LIMIT 1;
   
   -- If plan not found, use free plan as default
   IF v_plan_id IS NULL THEN
-    SELECT id, price INTO v_plan_id, v_amount
+    SELECT id, price_monthly INTO v_plan_id, v_amount
     FROM public.subscription_plans
     WHERE name = 'free'
     LIMIT 1;
