@@ -4,7 +4,6 @@ import { BottomNav } from "@/components/BottomNav";
 import { LowStockAlert } from "@/components/LowStockAlert";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { BulkReturnTab } from "@/components/BulkReturnTab";
-import { useTerminology } from "@/contexts/OrganizationContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +71,6 @@ const productSchema = z.object({
 });
 
 export default function Products() {
-  const terminology = useTerminology();
   const [isAdmin, setIsAdmin] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -126,7 +124,7 @@ export default function Products() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .eq("role", "admin")
+          .in("role", ["admin", "super_admin"])
           .maybeSingle();
         
         setIsAdmin(!!roles);
@@ -232,18 +230,26 @@ export default function Products() {
 
         if (profilesError) throw profilesError;
 
-        // Group by product_id
+        // Group by product_id (filter out riders without profiles - orphaned data)
         const stocksByProduct: Record<string, ProductRiderStock[]> = {};
         stockData.forEach(stock => {
+          const profile = profilesData?.find(p => p.user_id === stock.rider_id);
+          
+          // Skip if rider profile not found (orphaned data)
+          if (!profile) {
+            console.warn(`Skipping orphaned stock for rider_id: ${stock.rider_id}, product_id: ${stock.product_id}`);
+            return;
+          }
+          
           if (!stocksByProduct[stock.product_id]) {
             stocksByProduct[stock.product_id] = [];
           }
-          const profile = profilesData?.find(p => p.user_id === stock.rider_id);
+          
           stocksByProduct[stock.product_id].push({
             rider_id: stock.rider_id,
             quantity: stock.quantity,
             profiles: {
-              full_name: profile?.full_name || "N/A"
+              full_name: profile.full_name
             }
           });
         });
@@ -506,7 +512,7 @@ export default function Products() {
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Tambah {terminology.product} Baru</DialogTitle>
+                  <DialogTitle>Tambah Produk Baru</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -515,9 +521,9 @@ export default function Products() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nama {terminology.product} *</FormLabel>
+                          <FormLabel>Nama Produk *</FormLabel>
                           <FormControl>
-                            <Input placeholder={`Masukkan nama ${terminology.product.toLowerCase()}`} {...field} />
+                            <Input placeholder="Masukkan nama produk" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -678,7 +684,7 @@ export default function Products() {
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit {terminology.product}</DialogTitle>
+              <DialogTitle>Edit Produk</DialogTitle>
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
@@ -687,9 +693,9 @@ export default function Products() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama {terminology.product} *</FormLabel>
+                      <FormLabel>Nama Produk *</FormLabel>
                       <FormControl>
-                        <Input placeholder={`Masukkan nama ${terminology.product.toLowerCase()}`} {...field} />
+                        <Input placeholder="Masukkan nama produk" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
