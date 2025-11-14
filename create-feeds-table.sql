@@ -34,11 +34,15 @@ CREATE INDEX IF NOT EXISTS idx_feeds_created_by ON feeds(created_by);
 ALTER TABLE feeds ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- STEP 2: RLS POLICIES
+-- STEP 2: RLS POLICIES (Multi-Tenant Version)
 -- ============================================================================
 
--- Riders can view published feeds only
-CREATE POLICY "Riders can view published feeds"
+-- NOTE: This is placeholder - will be replaced by add-multitenant-to-merged-tables.sql
+-- For now, allow authenticated users to interact with feeds
+-- Execute add-multitenant-to-merged-tables.sql after this file for proper multi-tenant setup
+
+-- Temporary: All authenticated users can view published feeds
+CREATE POLICY "Users can view published feeds"
   ON feeds FOR SELECT
   TO authenticated
   USING (
@@ -47,39 +51,59 @@ CREATE POLICY "Riders can view published feeds"
     AND published_at <= NOW()
   );
 
--- Admins and Super Admins can view all feeds
-CREATE POLICY "Admins can view all feeds"
+-- Temporary: Admins can view all feeds
+CREATE POLICY "Admins can view all feeds temp"
   ON feeds FOR SELECT
   TO authenticated
   USING (
-    public.get_user_role(auth.uid()) IN ('admin', 'super_admin')
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
   );
 
--- Admins and Super Admins can create feeds
-CREATE POLICY "Admins can create feeds"
+-- Temporary: Admins can create feeds
+CREATE POLICY "Admins can create feeds temp"
   ON feeds FOR INSERT
   TO authenticated
   WITH CHECK (
-    public.get_user_role(auth.uid()) IN ('admin', 'super_admin')
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
   );
 
--- Admins and Super Admins can update feeds
-CREATE POLICY "Admins can update feeds"
+-- Temporary: Admins can update feeds
+CREATE POLICY "Admins can update feeds temp"
   ON feeds FOR UPDATE
   TO authenticated
   USING (
-    public.get_user_role(auth.uid()) IN ('admin', 'super_admin')
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
   )
   WITH CHECK (
-    public.get_user_role(auth.uid()) IN ('admin', 'super_admin')
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
   );
 
--- Admins and Super Admins can delete feeds
-CREATE POLICY "Admins can delete feeds"
+-- Temporary: Admins can delete feeds
+CREATE POLICY "Admins can delete feeds temp"
   ON feeds FOR DELETE
   TO authenticated
   USING (
-    public.get_user_role(auth.uid()) IN ('admin', 'super_admin')
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'super_admin')
+    )
   );
 
 -- ============================================================================
