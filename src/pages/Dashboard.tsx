@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { StatsCard } from "@/components/StatsCard";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import RiderTrackingMap from "@/components/RiderTrackingMap";
 import { ReturnsAccordion } from "@/components/ReturnsAccordion";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -407,6 +408,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && <SubscriptionBadge />}
             <Button
               onClick={handleRefresh}
               disabled={isRefreshing}

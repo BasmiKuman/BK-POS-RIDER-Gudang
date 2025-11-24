@@ -281,7 +281,10 @@ export default function POS() {
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient">{terminology.pos}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Transaksi penjualan</p>
           </div>
-          <WeatherWidget />
+          <div className="flex items-center gap-2">
+            {isAdmin && <SubscriptionBadge />}
+            <WeatherWidget />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
